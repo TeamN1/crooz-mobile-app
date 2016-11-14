@@ -5,6 +5,18 @@ namespace Crooz
 {
     public static class BitmapHelpers
     {
+        public static Bitmap GetBitmap(byte[] data)
+        {
+            Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
+            using (Matrix mtx = new Matrix())
+            {
+                mtx.PreRotate(90);
+                if (mtx != null)
+                    bitmap = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, mtx, false);
+            }
+            return bitmap ;
+        }
+
         public static Bitmap GetAndRotateBitmap(string fileName)
         {
             Bitmap bitmap = BitmapFactory.DecodeFile(fileName);

@@ -1,4 +1,0 @@
-Crooz.MainActivity, Crooz;md52281f93b1ea1083eff0ae8f056edf9a2.MainActivity
-Crooz.MainActivity, Crooz, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null;md52281f93b1ea1083eff0ae8f056edf9a2.MainActivity
-Crooz.MainActivity;md52281f93b1ea1083eff0ae8f056edf9a2.MainActivity
-crooz.MainActivity;md52281f93b1ea1083eff0ae8f056edf9a2.MainActivity
