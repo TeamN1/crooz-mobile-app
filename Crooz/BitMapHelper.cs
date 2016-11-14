@@ -10,7 +10,7 @@ namespace Crooz
             Bitmap bitmap = BitmapFactory.DecodeByteArray(data, 0, data.Length);
             using (Matrix mtx = new Matrix())
             {
-                mtx.PreRotate(90);
+                mtx.PreRotate(270);
                 if (mtx != null)
                     bitmap = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, mtx, false);
             }

@@ -53,16 +53,23 @@ namespace Crooz
         {
             base.OnCreate(bundle);
 
-            _textureView = new TextureView(this);
-            _textureView.SurfaceTextureListener = this;
-
-            SetContentView(_textureView);
-
             photoTimer = new Timer(5000);
             photoTimer.Elapsed += async (sender, e) => await TakePhoto();
             photoTimer.Start();
 
-            //SetContentView(Resource.Layout.Main);
+            SetContentView(Resource.Layout.Main);
+
+            _textureView = FindViewById<TextureView>(Resource.Id.textureView1);
+            _textureView.SurfaceTextureListener = this;
+
+            _pictureButton = FindViewById<Button>(Resource.Id.GetPictureButton);
+            _pictureButton.Click += OnActionClick;
+
+            _imageView = FindViewById<ImageView>(Resource.Id.imageView1);
+
+            _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
+
+
 
             //if (IsThereAnAppToTakePictures())
             //{
@@ -206,7 +213,7 @@ namespace Crooz
             _bitmap = Bitmap.CreateScaledBitmap(_bitmap, 2000, (int)(2000 * _bitmap.Height / _bitmap.Width), false);
 
             //Display the image
-            //_imageView.SetImageBitmap(_bitmap);
+            _imageView.SetImageBitmap(_bitmap);
 
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
             {
