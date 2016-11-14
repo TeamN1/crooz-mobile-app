@@ -18,9 +18,16 @@
   <ImageView
       android:src="@android:drawable/ic_menu_gallery"
       android:layout_width="fill_parent"
-      android:layout_height="300.0dp"
+      android:layout_height="200.0dp"
       android:id="@+id/imageView1"
       android:adjustViewBounds="true" />
+  <TextView
+        android:layout_width="fill_parent"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_height="wrap_content"
+        android:text="Location (when available)"
+        android:id="@+id/location_text"
+        android:layout_marginBottom="15dp" />
   <TextView
       android:textAppearance="?android:attr/textAppearanceLarge"
       android:layout_width="fill_parent"

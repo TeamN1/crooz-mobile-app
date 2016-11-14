@@ -13,11 +13,15 @@ using Android.Views;
 using Android.Hardware;
 using System.Timers;
 using System.Threading.Tasks;
+using Android.Locations;
+using System.Linq;
+using Android.Util;
+using Android.Runtime;
 
 namespace Crooz
 {
     [Activity(Label = "Crooz", MainLauncher = true, Icon = "@drawable/icon", ScreenOrientation = ScreenOrientation.Portrait)]
-    public class MainActivity : Activity, TextureView.ISurfaceTextureListener, Android.Hardware.Camera.IShutterCallback, Android.Hardware.Camera.IPictureCallback
+    public class MainActivity : Activity, TextureView.ISurfaceTextureListener, Android.Hardware.Camera.IShutterCallback, Android.Hardware.Camera.IPictureCallback, ILocationListener
     {
         public static File _file;
         public static File _dir;
@@ -29,6 +33,12 @@ namespace Crooz
         Android.Hardware.Camera _camera;
         TextureView _textureView;
         Timer photoTimer;
+
+        Location _currentLocation;
+        LocationManager _locationManager;
+
+        string _locationProvider;
+        TextView _locationText;
 
         private void CreateDirectoryForPictures()
         {
@@ -69,6 +79,9 @@ namespace Crooz
 
             _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
 
+            _locationText = FindViewById<TextView>(Resource.Id.location_text);
+
+            InitializeLocationManager();
 
 
             //if (IsThereAnAppToTakePictures())
@@ -82,6 +95,25 @@ namespace Crooz
 
             //    _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
             //}
+        }
+
+        void InitializeLocationManager()
+        {
+            _locationManager = (LocationManager)GetSystemService(LocationService);
+            Criteria criteriaForLocationService = new Criteria
+            {
+                Accuracy = Accuracy.Fine
+            };
+            IList<string> acceptableLocationProviders = _locationManager.GetProviders(criteriaForLocationService, true);
+
+            if (acceptableLocationProviders.Any())
+            {
+                _locationProvider = acceptableLocationProviders.First();
+            }
+            else
+            {
+                _locationProvider = string.Empty;
+            }
         }
 
         private async Task TakePhoto()
@@ -233,6 +265,46 @@ namespace Crooz
                 }
                 
             }
+        }
+
+        public async void OnLocationChanged(Location location)
+        {
+            _currentLocation = location;
+            if (_currentLocation == null)
+            {
+                _locationText.Text = "Unable to determine your location. Try again in a short while.";
+            }
+            else
+            {
+                _locationText.Text = string.Format("{0:f6},{1:f6}", _currentLocation.Latitude, _currentLocation.Longitude);
+            }
+        }
+
+        public void OnProviderDisabled(string provider)
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void OnProviderEnabled(string provider)
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void OnStatusChanged(string provider, [GeneratedEnum] Availability status, Bundle extras)
+        {
+            //throw new NotImplementedException();
+        }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
+            _locationManager.RequestLocationUpdates(_locationProvider, 0, 0, this);
+        }
+
+        protected override void OnPause()
+        {
+            base.OnPause();
+            _locationManager.RemoveUpdates(this);
         }
     }
 }
