@@ -17,6 +17,7 @@ using Android.Locations;
 using System.Linq;
 using Android.Util;
 using Android.Runtime;
+using RestSharp;
 
 namespace Crooz
 {
@@ -39,6 +40,8 @@ namespace Crooz
 
         string _locationProvider;
         TextView _locationText;
+
+        RestClient client = new RestClient("https://croozio.azurewebsites.net/");
 
         private void CreateDirectoryForPictures()
         {
@@ -238,6 +241,8 @@ namespace Crooz
 
             camera.StartPreview();
 
+            var timestamp = new DateTime();
+
             //Get the bitmap with the right rotation
             _bitmap = BitmapHelpers.GetBitmap(data);
 
@@ -249,6 +254,9 @@ namespace Crooz
 
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
             {
+                // Mood
+                var currentMood = new Mood();
+
                 //Get a stream
                 _bitmap.Compress(Bitmap.CompressFormat.Jpeg, 90, stream);
                 stream.Seek(0, System.IO.SeekOrigin.Begin);
@@ -256,14 +264,41 @@ namespace Crooz
                 //Get and display the happiness score
                 try
                 {
-                    float result = await Core.GetAverageHappinessScore(stream);
-                    System.Console.WriteLine(result);
+                    currentMood = await Core.GetMood(stream);
+                    
                 }
                 catch (Exception e)
                 {
                     System.Console.WriteLine("error no face");
                 }
-                
+                try
+                {
+                    var request = new RestRequest("api/data", Method.POST);
+                    request.RequestFormat = DataFormat.Json;
+                    var body = new DataPacket
+                    {
+                        userId = "test",
+                        tripId = "room",
+                        geo = new Geolocation
+                        {
+                            lat = _currentLocation.Latitude,
+                            lon = _currentLocation.Longitude
+                        },
+                        mood = currentMood,
+                        song = "Jingle Bells",
+                        speed = _currentLocation.Speed,
+                        time = timestamp
+                    };
+                    request.AddBody(body);
+
+                    client.ExecuteAsync(request, response => {
+                        System.Console.WriteLine(response.Content);
+                    });
+                }
+                catch (Exception e)
+                {
+                    System.Console.WriteLine(e.Message);
+                }
             }
         }
 
@@ -276,7 +311,7 @@ namespace Crooz
             }
             else
             {
-                _locationText.Text = string.Format("{0:f6},{1:f6}", _currentLocation.Latitude, _currentLocation.Longitude);
+                _locationText.Text = string.Format("{0:f6},{1:f6},{2:f6}", _currentLocation.Latitude, _currentLocation.Longitude,_currentLocation.Speed);
             }
         }
 
@@ -299,6 +334,7 @@ namespace Crooz
         {
             base.OnResume();
             _locationManager.RequestLocationUpdates(_locationProvider, 0, 0, this);
+            _currentLocation = _locationManager.GetLastKnownLocation(_locationProvider);
         }
 
         protected override void OnPause()

@@ -1,4 +1,5 @@
-﻿using Microsoft.ProjectOxford.Emotion;
+﻿using Crooz;
+using Microsoft.ProjectOxford.Emotion;
 using Microsoft.ProjectOxford.Emotion.Contract;
 using System;
 using System.IO;
@@ -9,7 +10,7 @@ namespace SharedProject
 {
     class Core
     {
-        private static async Task<Emotion[]> GetHappiness(Stream stream)
+        private static async Task<Emotion[]> GetEmotions(Stream stream)
         {
             string emotionKey = "ac6a1ec8050f47faa18500c365bf3efa";
 
@@ -27,7 +28,7 @@ namespace SharedProject
         //Average happiness calculation in case of multiple people
         public static async Task<float> GetAverageHappinessScore(Stream stream)
         {
-            Emotion[] emotionResults = await GetHappiness(stream);
+            Emotion[] emotionResults = await GetEmotions(stream);
 
             float score = 0;
             float angerScore = 0;
@@ -40,6 +41,22 @@ namespace SharedProject
             }
 
             return score / emotionResults.Count();
+        }
+
+        public static async Task<Mood> GetMood(Stream stream)
+        {
+            Emotion[] emotionResults = await GetEmotions(stream);
+
+            // Get first emotion
+
+            return new Mood
+            {
+                surprise = emotionResults[0].Scores.Surprise,
+                happiness = emotionResults[0].Scores.Happiness,
+                neutral = emotionResults[0].Scores.Neutral,
+                sadness = emotionResults[0].Scores.Sadness,
+                anger = emotionResults[0].Scores.Anger
+            };
         }
 
         public static string GetHappinessMessage(float score)
