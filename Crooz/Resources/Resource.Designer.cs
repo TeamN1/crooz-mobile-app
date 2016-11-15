@@ -60,14 +60,17 @@ namespace Crooz
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f050001
-			public const int location_text = 2131034113;
+			// aapt resource value: 0x7f060002
+			public const int emotionDetails_text = 2131099650;
 			
-			// aapt resource value: 0x7f050002
-			public const int resultText = 2131034114;
+			// aapt resource value: 0x7f060001
+			public const int location_text = 2131099649;
 			
-			// aapt resource value: 0x7f050000
-			public const int textureView1 = 2131034112;
+			// aapt resource value: 0x7f060003
+			public const int resultText = 2131099651;
+			
+			// aapt resource value: 0x7f060000
+			public const int textureView1 = 2131099648;
 			
 			static Id()
 			{
@@ -95,14 +98,30 @@ namespace Crooz
 			}
 		}
 		
+		public partial class Raw
+		{
+			
+			// aapt resource value: 0x7f040000
+			public const int happy = 2130968576;
+			
+			static Raw()
+			{
+				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
+			}
+			
+			private Raw()
+			{
+			}
+		}
+		
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f040001
-			public const int ApplicationName = 2130968577;
+			// aapt resource value: 0x7f050001
+			public const int ApplicationName = 2131034113;
 			
-			// aapt resource value: 0x7f040000
-			public const int Hello = 2130968576;
+			// aapt resource value: 0x7f050000
+			public const int Hello = 2131034112;
 			
 			static String()
 			{

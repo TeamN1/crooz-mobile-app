@@ -20,7 +20,7 @@ using Android.Runtime;
 using RestSharp;
 using Android.Telephony;
 using Java.Util;
-
+using Android.Media;
 
 namespace Crooz
 {
@@ -32,10 +32,13 @@ namespace Crooz
         public static Bitmap _bitmap;
 
         private TextView _resultTextView;
+        private TextView _emotionDetailsTextView;
         private bool _isCaptureMode = true;
         Android.Hardware.Camera _camera;
         TextureView _textureView;
         System.Timers.Timer photoTimer;
+
+        MediaPlayer _player;
 
         Location _currentLocation;
         LocationManager _locationManager;
@@ -45,6 +48,8 @@ namespace Crooz
 
         string _currentSession;
         string _deviceID;
+
+        string _currentEmotion;
 
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
 
@@ -119,9 +124,15 @@ namespace Crooz
 
             _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
 
+            _emotionDetailsTextView = FindViewById<TextView>(Resource.Id.emotionDetails_text);
+
             _locationText = FindViewById<TextView>(Resource.Id.location_text);
 
             InitializeLocationManager();
+
+            // Start playing some beats
+            _player = MediaPlayer.Create(this, Resource.Raw.happy);
+            _player.Start();
         }
 
         void InitializeLocationManager()
@@ -226,11 +237,14 @@ namespace Crooz
                 {
                     var currentEmotion = await Core.GetEmotion(stream);
                     currentMood = Core.GetMood(currentEmotion);
-                    _resultTextView.Text = currentEmotion.Scores.ToRankedList().First().Key;
+                    _currentEmotion = currentEmotion.Scores.ToRankedList().First().Key;
+                    _resultTextView.Text = _currentEmotion;
+                    _emotionDetailsTextView.Text = string.Format("Surprise: {0:f2} Happy: {1:f2} Neutral: {2:f2} Sad: {3:f2} Angry: {4:f2}", currentMood.surprise, currentMood.happiness, currentMood.neutral, currentMood.sadness, currentMood.anger);
                 }
                 catch (Exception e)
                 {
-                    System.Console.WriteLine("error no face");
+                    _emotionDetailsTextView.Text = "";
+                    _resultTextView.Text = "No face detected";
                 }
                 try
                 {

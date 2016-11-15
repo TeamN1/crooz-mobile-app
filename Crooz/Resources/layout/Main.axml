@@ -4,8 +4,8 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
     <FrameLayout
-        android:layout_width="285.0dp"
-        android:layout_height="500.0dp"
+        android:layout_width="300.0dp"
+        android:layout_height="400.0dp"
         android:layout_gravity="center">
         <TextureView
             android:id="@+id/textureView1"
@@ -26,9 +26,17 @@
         android:id="@+id/location_text"
         android:layout_marginBottom="15dp" />
     <TextView
+        android:layout_width="fill_parent"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/emotionDetails_text"
+        android:layout_marginBottom="15dp" />
+    <TextView
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:text="Mood (when available)"
         android:id="@+id/resultText"
         android:textAlignment="center" />
     <!--<Button
