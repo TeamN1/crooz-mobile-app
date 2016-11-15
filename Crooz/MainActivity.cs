@@ -18,6 +18,10 @@ using System.Linq;
 using Android.Util;
 using Android.Runtime;
 using RestSharp;
+using Android.Telephony;
+using Java.Util;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Crooz
 {
@@ -33,7 +37,7 @@ namespace Crooz
         private bool _isCaptureMode = true;
         Android.Hardware.Camera _camera;
         TextureView _textureView;
-        Timer photoTimer;
+        System.Timers.Timer photoTimer;
 
         Location _currentLocation;
         LocationManager _locationManager;
@@ -42,6 +46,15 @@ namespace Crooz
         TextView _locationText;
 
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
+
+        // Parse the connection string and return a reference to the storage account.
+        CloudStorageAccount storageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=croozdata;AccountKey=NjwMoGKltY9rgfVhks/BdNpqtbslMo8HEnZeQVMmZEWd6/pEdG4UWG2yqw37NPQnWjyIb7AtD8ALrEK5Amx5vQ==;");
+
+        // Create the table client.
+        CloudTableClient tableClient;
+
+        // Retrieve a reference to the table.
+        CloudTable table;
 
         private void CreateDirectoryForPictures()
         {
@@ -66,7 +79,34 @@ namespace Crooz
         {
             base.OnCreate(bundle);
 
-            photoTimer = new Timer(5000);
+            // Get UUID
+            var deviceID = "undefined";
+            var telephonyDeviceID = string.Empty;
+            var telephonySIMSerialNumber = string.Empty;
+            TelephonyManager telephonyManager = (TelephonyManager)this.ApplicationContext.GetSystemService(Context.TelephonyService);
+            if (telephonyManager != null)
+            {
+                if (!string.IsNullOrEmpty(telephonyManager.DeviceId))
+                    telephonyDeviceID = telephonyManager.DeviceId;
+                    deviceID = telephonyDeviceID;
+                //if (!string.IsNullOrEmpty(telephonyManager.SimSerialNumber))
+                //    telephonySIMSerialNumber = telephonyManager.SimSerialNumber;
+            }
+            //var androidID = Android.Provider.Settings.Secure.GetString(this.ApplicationContext.ContentResolver, Android.Provider.Settings.Secure.AndroidId);
+            //var deviceUuid = new UUID(androidID.GetHashCode(), ((long)telephonyDeviceID.GetHashCode() << 32) | telephonySIMSerialNumber.GetHashCode());
+            //var deviceID = deviceUuid.ToString();
+
+            // Setup table
+            // Create the table client.
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+            // Retrieve a reference to the table.
+            CloudTable table = tableClient.GetTableReference("people");
+
+            // Create the table if it doesn't exist.
+            table.CreateIfNotExistsAsync();
+
+            photoTimer = new System.Timers.Timer(5000);
             photoTimer.Elapsed += async (sender, e) => await TakePhoto();
             photoTimer.Start();
 
