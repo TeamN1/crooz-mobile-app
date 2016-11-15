@@ -44,6 +44,9 @@ namespace Crooz
         string _locationProvider;
         TextView _locationText;
 
+        string _currentSession;
+        string _deviceID;
+
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
 
         private void CreateDirectoryForPictures()
@@ -70,7 +73,7 @@ namespace Crooz
             base.OnCreate(bundle);
 
             // Get UUID
-            var deviceID = "undefined";
+            _deviceID = "undefined";
             var telephonyDeviceID = string.Empty;
             var telephonySIMSerialNumber = string.Empty;
             TelephonyManager telephonyManager = (TelephonyManager)this.ApplicationContext.GetSystemService(Context.TelephonyService);
@@ -78,13 +81,39 @@ namespace Crooz
             {
                 if (!string.IsNullOrEmpty(telephonyManager.DeviceId))
                     telephonyDeviceID = telephonyManager.DeviceId;
-                    deviceID = telephonyDeviceID;
+                    _deviceID = telephonyDeviceID;
                 //if (!string.IsNullOrEmpty(telephonyManager.SimSerialNumber))
                 //    telephonySIMSerialNumber = telephonyManager.SimSerialNumber;
             }
             //var androidID = Android.Provider.Settings.Secure.GetString(this.ApplicationContext.ContentResolver, Android.Provider.Settings.Secure.AndroidId);
             //var deviceUuid = new UUID(androidID.GetHashCode(), ((long)telephonyDeviceID.GetHashCode() << 32) | telephonySIMSerialNumber.GetHashCode());
             //var deviceID = deviceUuid.ToString();
+
+            // Generate session string using time
+            _currentSession = DateTime.Now.ToString();
+
+            // Send to database
+            try
+            {
+                var request = new RestRequest("api/users", Method.POST);
+                request.RequestFormat = DataFormat.Json;
+                var body = new User
+                {
+                    id = _deviceID,
+                    currentSession = _currentSession,
+                    name = "Edwin Tsang"
+                };
+                request.AddBody(body);
+
+                client.ExecuteAsync(request, response => {
+                    System.Console.WriteLine(response.Content);
+                });
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine(e.Message);
+            }
+
 
             photoTimer = new System.Timers.Timer(5000);
             photoTimer.Elapsed += async (sender, e) => await TakePhoto();
@@ -297,8 +326,8 @@ namespace Crooz
                     request.RequestFormat = DataFormat.Json;
                     var body = new DataPacket
                     {
-                        userId = "test",
-                        tripId = "room",
+                        userId = _deviceID,
+                        tripId = _currentSession,
                         geo = new Geolocation
                         {
                             lat = _currentLocation.Latitude,
