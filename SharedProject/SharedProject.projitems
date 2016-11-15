@@ -9,6 +9,6 @@
     <Import_RootNamespace>SharedProject</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Core.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EmotionAPI.cs" />
   </ItemGroup>
 </Project>

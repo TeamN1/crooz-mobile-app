@@ -8,13 +8,17 @@ using System.Threading.Tasks;
 
 namespace SharedProject
 {
-    class Core
+    class EmotionAPI
     {
-        private static async Task<Emotion[]> GetEmotions(Stream stream)
-        {
-            string emotionKey = "ac6a1ec8050f47faa18500c365bf3efa";
+        EmotionServiceClient emotionClient;
 
-            EmotionServiceClient emotionClient = new EmotionServiceClient(emotionKey);
+        public EmotionAPI()
+        {
+            emotionClient = new EmotionServiceClient("ac6a1ec8050f47faa18500c365bf3efa");
+        }
+
+        private async Task<Emotion[]> GetEmotions(Stream stream)
+        {
 
             var emotionResults = await emotionClient.RecognizeAsync(stream);
 
@@ -26,7 +30,7 @@ namespace SharedProject
             return emotionResults;
         }
         //Average happiness calculation in case of multiple people
-        public static async Task<float> GetAverageHappinessScore(Stream stream)
+        public async Task<float> GetAverageHappinessScore(Stream stream)
         {
             Emotion[] emotionResults = await GetEmotions(stream);
 
@@ -43,7 +47,7 @@ namespace SharedProject
             return score / emotionResults.Count();
         }
 
-        public static async Task<Emotion> GetEmotion(Stream stream)
+        public async Task<Emotion> GetEmotion(Stream stream)
         {
             Emotion[] emotionResults = await GetEmotions(stream);
 
@@ -52,7 +56,7 @@ namespace SharedProject
             return emotionResults.First();
         }
 
-        public static Mood GetMood(Emotion emotion)
+        public Mood GetMood(Emotion emotion)
         {
             // Get first emotion
 
@@ -66,7 +70,7 @@ namespace SharedProject
             };
         }
 
-        public static string GetHappinessMessage(float score)
+        public string GetHappinessMessage(float score)
         {
             score = score * 100;
             double result = Math.Round(score, 2);

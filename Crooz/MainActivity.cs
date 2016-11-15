@@ -51,6 +51,8 @@ namespace Crooz
 
         string _currentEmotion;
 
+        EmotionAPI _emotionAPI;
+
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
 
         private bool IsThereAnAppToTakePictures()
@@ -128,7 +130,12 @@ namespace Crooz
 
             _locationText = FindViewById<TextView>(Resource.Id.location_text);
 
+
+            // Start Geolocation
             InitializeLocationManager();
+
+            // Start Emotion API
+            _emotionAPI = new EmotionAPI();
 
             // Start playing some beats
             _player = MediaPlayer.Create(this, Resource.Raw.happy);
@@ -235,8 +242,8 @@ namespace Crooz
                 //Get and display the happiness score
                 try
                 {
-                    var currentEmotion = await Core.GetEmotion(stream);
-                    currentMood = Core.GetMood(currentEmotion);
+                    var currentEmotion = await _emotionAPI.GetEmotion(stream);
+                    currentMood = _emotionAPI.GetMood(currentEmotion);
                     _currentEmotion = currentEmotion.Scores.ToRankedList().First().Key;
                     _resultTextView.Text = _currentEmotion;
                     _emotionDetailsTextView.Text = string.Format("Surprise: {0:f2} Happy: {1:f2} Neutral: {2:f2} Sad: {3:f2} Angry: {4:f2}", currentMood.surprise, currentMood.happiness, currentMood.neutral, currentMood.sadness, currentMood.anger);
