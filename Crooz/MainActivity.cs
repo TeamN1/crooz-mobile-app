@@ -30,8 +30,7 @@ namespace Crooz
         public static File _file;
         public static File _dir;
         public static Bitmap _bitmap;
-        private ImageView _imageView;
-        private Button _pictureButton;
+
         private TextView _resultTextView;
         private bool _isCaptureMode = true;
         Android.Hardware.Camera _camera;
@@ -48,17 +47,6 @@ namespace Crooz
         string _deviceID;
 
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
-
-        private void CreateDirectoryForPictures()
-        {
-            _dir = new File(
-                Android.OS.Environment.GetExternalStoragePublicDirectory(
-                    Android.OS.Environment.DirectoryPictures), "CameraAppDemo");
-            if (!_dir.Exists())
-            {
-                _dir.Mkdirs();
-            }
-        }
 
         private bool IsThereAnAppToTakePictures()
         {
@@ -124,29 +112,16 @@ namespace Crooz
             _textureView = FindViewById<TextureView>(Resource.Id.textureView1);
             _textureView.SurfaceTextureListener = this;
 
-            _pictureButton = FindViewById<Button>(Resource.Id.GetPictureButton);
-            _pictureButton.Click += OnActionClick;
+            //_pictureButton = FindViewById<Button>(Resource.Id.GetPictureButton);
+            //_pictureButton.Click += OnActionClick;
 
-            _imageView = FindViewById<ImageView>(Resource.Id.imageView1);
+            //_imageView = FindViewById<ImageView>(Resource.Id.imageView1);
 
             _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
 
             _locationText = FindViewById<TextView>(Resource.Id.location_text);
 
             InitializeLocationManager();
-
-
-            //if (IsThereAnAppToTakePictures())
-            //{
-            //    CreateDirectoryForPictures();
-
-            //    _pictureButton = FindViewById<Button>(Resource.Id.GetPictureButton);
-            //    _pictureButton.Click += OnActionClick;
-
-            //    _imageView = FindViewById<ImageView>(Resource.Id.imageView1);
-
-            //    _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
-            //}
         }
 
         void InitializeLocationManager()
@@ -203,71 +178,7 @@ namespace Crooz
 
             return true;
         }
-
-        private void OnActionClick(object sender, EventArgs eventArgs)
-        {
-            if (_isCaptureMode == true)
-            {
-                Intent intent = new Intent(MediaStore.ActionImageCapture);
-                _file = new Java.IO.File(_dir, String.Format("myPhoto_{0}.jpg", Guid.NewGuid()));
-                intent.PutExtra(MediaStore.ExtraOutput, Android.Net.Uri.FromFile(_file));
-                StartActivityForResult(intent, 0);
-            }
-            else
-            {
-                _imageView.SetImageBitmap(null);
-                if (_bitmap != null)
-                {
-                    _bitmap.Recycle();
-                    _bitmap.Dispose();
-                    _bitmap = null;
-                }
-                _pictureButton.Text = "Take Picture";
-                _resultTextView.Text = "";
-                _isCaptureMode = true;
-            }
-        }
-
-        protected override async void OnActivityResult(int requestCode, Result resultCode, Intent data)
-        {
-            base.OnActivityResult(requestCode, resultCode, data);
-
-            try
-            {
-                //Get the bitmap with the right rotation
-                _bitmap = BitmapHelpers.GetAndRotateBitmap(_file.Path);
-
-                //Resize the picture to be under 4MB (Emotion API limitation and better for Android memory)
-                _bitmap = Bitmap.CreateScaledBitmap(_bitmap, 2000, (int)(2000 * _bitmap.Height / _bitmap.Width), false);
-
-                //Display the image
-                _imageView.SetImageBitmap(_bitmap);
-
-                //Loading message
-                _resultTextView.Text = "Loading...";
-
-                using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
-                {
-                    //Get a stream
-                    _bitmap.Compress(Bitmap.CompressFormat.Jpeg, 90, stream);
-                    stream.Seek(0, System.IO.SeekOrigin.Begin);
-
-                    //Get and display the happiness score
-                    float result = await Core.GetAverageHappinessScore(stream);
-                    _resultTextView.Text = Core.GetHappinessMessage(result);
-                }
-            }
-            catch (Exception ex)
-            {
-                _resultTextView.Text = ex.Message;
-            }
-            finally
-            {
-                _pictureButton.Text = "Reset";
-                _isCaptureMode = false;
-            }
-        }
-
+        
         public void OnSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height)
         {
             //throw new NotImplementedException();
@@ -299,7 +210,7 @@ namespace Crooz
             _bitmap = Bitmap.CreateScaledBitmap(_bitmap, 2000, (int)(2000 * _bitmap.Height / _bitmap.Width), false);
 
             //Display the image
-            _imageView.SetImageBitmap(_bitmap);
+            //_imageView.SetImageBitmap(_bitmap);
 
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
             {
@@ -313,8 +224,9 @@ namespace Crooz
                 //Get and display the happiness score
                 try
                 {
-                    currentMood = await Core.GetMood(stream);
-                    
+                    var currentEmotion = await Core.GetEmotion(stream);
+                    currentMood = Core.GetMood(currentEmotion);
+                    _resultTextView.Text = currentEmotion.Scores.ToRankedList().First().Key;
                 }
                 catch (Exception e)
                 {

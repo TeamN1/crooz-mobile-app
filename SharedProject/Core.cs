@@ -43,19 +43,26 @@ namespace SharedProject
             return score / emotionResults.Count();
         }
 
-        public static async Task<Mood> GetMood(Stream stream)
+        public static async Task<Emotion> GetEmotion(Stream stream)
         {
             Emotion[] emotionResults = await GetEmotions(stream);
 
             // Get first emotion
 
+            return emotionResults.First();
+        }
+
+        public static Mood GetMood(Emotion emotion)
+        {
+            // Get first emotion
+
             return new Mood
             {
-                surprise = emotionResults[0].Scores.Surprise,
-                happiness = emotionResults[0].Scores.Happiness,
-                neutral = emotionResults[0].Scores.Neutral,
-                sadness = emotionResults[0].Scores.Sadness,
-                anger = emotionResults[0].Scores.Anger
+                surprise = emotion.Scores.Surprise,
+                happiness = emotion.Scores.Happiness,
+                neutral = emotion.Scores.Neutral,
+                sadness = emotion.Scores.Sadness,
+                anger = emotion.Scores.Anger
             };
         }
 
