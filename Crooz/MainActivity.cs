@@ -31,6 +31,7 @@ namespace Crooz
         public static File _dir;
         public static Bitmap _bitmap;
 
+        private ImageView _imageView;
         private TextView _resultTextView;
         private TextView _emotionDetailsTextView;
         private bool _isCaptureMode = true;
@@ -179,7 +180,7 @@ namespace Crooz
 
             try
             {
-                _camera.SetDisplayOrientation(90);
+                _camera.SetDisplayOrientation(270);
                 _camera.SetPreviewTexture(surface);
                 _camera.StartPreview();
 
@@ -298,7 +299,7 @@ namespace Crooz
                                 lon = _currentLocation.Longitude
                             },
                             mood = currentMood,
-                            song = "Jingle Bells",
+                            song = _currentSong,
                             speed = _currentLocation.Speed,
                             time = timestamp
                         };
