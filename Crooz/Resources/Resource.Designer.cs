@@ -66,6 +66,9 @@ namespace Crooz
 			// aapt resource value: 0x7f060001
 			public const int location_text = 2131099649;
 			
+			// aapt resource value: 0x7f060004
+			public const int newSessionButton = 2131099652;
+			
 			// aapt resource value: 0x7f060003
 			public const int resultText = 2131099651;
 			

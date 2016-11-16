@@ -12,7 +12,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </FrameLayout>
-    <!--<ImageView
+<!--<ImageView
         android:src="@android:drawable/ic_menu_gallery"
         android:layout_width="fill_parent"
         android:layout_height="200.0dp"
@@ -39,9 +39,9 @@
         android:text="Mood (when available)"
         android:id="@+id/resultText"
         android:textAlignment="center" />
-    <!--<Button
-        android:id="@+id/GetPictureButton"
+<Button
+        android:id="@+id/newSessionButton"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Take Picture" />-->
+        android:text="New trip" />
 </LinearLayout>

@@ -35,6 +35,7 @@ namespace Crooz
         private TextView _resultTextView;
         private TextView _emotionDetailsTextView;
         private bool _isCaptureMode = true;
+        private Button _newSessionButton;
         Android.Hardware.Camera _camera;
         TextureView _textureView;
         System.Timers.Timer photoTimer;
@@ -74,6 +75,64 @@ namespace Crooz
 
             // Get UUID
             _deviceID = "undefined";
+            _currentSession = "undefined";
+
+            // Get latest session
+            try
+            {
+                var request = new RestRequest("api/users", Method.GET);
+                request.RequestFormat = DataFormat.Json;
+
+                client.ExecuteAsync(request, response => {
+                    RestSharp.Deserializers.JsonDeserializer deserialize = new RestSharp.Deserializers.JsonDeserializer();
+                    var users = deserialize.Deserialize<List<User>>(response);
+                    if (users.Count>0)
+                    {
+                        _deviceID = users.First().id;
+                        _currentSession = users.First().currentSession;
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine(e.Message);
+            }
+
+            // Start Emotion API
+            _emotionAPI = new EmotionAPI();
+
+            // Start Geolocation
+            InitializeLocationManager();
+
+            // Start Mediaplayer
+            _player = MediaPlayer.Create(this, Resource.Raw.neutral);
+
+            photoTimer = new System.Timers.Timer(5000);
+            photoTimer.Elapsed += async (sender, e) => await TakePhoto();
+            photoTimer.Start();
+
+            SetContentView(Resource.Layout.Main);
+
+            _textureView = FindViewById<TextureView>(Resource.Id.textureView1);
+            _textureView.SurfaceTextureListener = this;
+
+            //_pictureButton = FindViewById<Button>(Resource.Id.GetPictureButton);
+            //_pictureButton.Click += OnActionClick;
+
+            //_imageView = FindViewById<ImageView>(Resource.Id.imageView1);
+
+            _newSessionButton = FindViewById<Button>(Resource.Id.newSessionButton);
+            _newSessionButton.Click += _newSessionButton_Click;
+
+            _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
+
+            _emotionDetailsTextView = FindViewById<TextView>(Resource.Id.emotionDetails_text);
+
+            _locationText = FindViewById<TextView>(Resource.Id.location_text);
+        }
+
+        private void _newSessionButton_Click(object sender, EventArgs eventargs)
+        {
             var telephonyDeviceID = string.Empty;
             var telephonySIMSerialNumber = string.Empty;
             TelephonyManager telephonyManager = (TelephonyManager)this.ApplicationContext.GetSystemService(Context.TelephonyService);
@@ -81,7 +140,7 @@ namespace Crooz
             {
                 if (!string.IsNullOrEmpty(telephonyManager.DeviceId))
                     telephonyDeviceID = telephonyManager.DeviceId;
-                    _deviceID = telephonyDeviceID;
+                _deviceID = telephonyDeviceID;
                 //if (!string.IsNullOrEmpty(telephonyManager.SimSerialNumber))
                 //    telephonySIMSerialNumber = telephonyManager.SimSerialNumber;
             }
@@ -113,38 +172,6 @@ namespace Crooz
             {
                 System.Console.WriteLine(e.Message);
             }
-
-            // Start Emotion API
-            _emotionAPI = new EmotionAPI();
-
-            // Start Geolocation
-            InitializeLocationManager();
-
-            // Start Mediaplayer
-            _player = MediaPlayer.Create(this, Resource.Raw.neutral);
-
-            photoTimer = new System.Timers.Timer(5000);
-            photoTimer.Elapsed += async (sender, e) => await TakePhoto();
-            photoTimer.Start();
-
-            SetContentView(Resource.Layout.Main);
-
-            _textureView = FindViewById<TextureView>(Resource.Id.textureView1);
-            _textureView.SurfaceTextureListener = this;
-
-            //_pictureButton = FindViewById<Button>(Resource.Id.GetPictureButton);
-            //_pictureButton.Click += OnActionClick;
-
-            //_imageView = FindViewById<ImageView>(Resource.Id.imageView1);
-
-            _resultTextView = FindViewById<TextView>(Resource.Id.resultText);
-
-            _emotionDetailsTextView = FindViewById<TextView>(Resource.Id.emotionDetails_text);
-
-            _locationText = FindViewById<TextView>(Resource.Id.location_text);
-
-
-
         }
 
         void InitializeLocationManager()
