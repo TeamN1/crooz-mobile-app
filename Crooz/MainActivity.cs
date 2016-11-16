@@ -51,6 +51,8 @@ namespace Crooz
 
         string _currentEmotion;
 
+        string _currentSong;
+
         EmotionAPI _emotionAPI;
 
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
@@ -130,6 +132,8 @@ namespace Crooz
 
             _locationText = FindViewById<TextView>(Resource.Id.location_text);
 
+            // Start Mediaplayer
+            _player = MediaPlayer.Create(this,Resource.Raw.neutral);
 
             // Start Geolocation
             InitializeLocationManager();
@@ -137,9 +141,7 @@ namespace Crooz
             // Start Emotion API
             _emotionAPI = new EmotionAPI();
 
-            // Start playing some beats
-            _player = MediaPlayer.Create(this, Resource.Raw.happy);
-            _player.Start();
+
         }
 
         void InitializeLocationManager()
@@ -244,43 +246,79 @@ namespace Crooz
                 {
                     var currentEmotion = await _emotionAPI.GetEmotion(stream);
                     currentMood = _emotionAPI.GetMood(currentEmotion);
-                    _currentEmotion = currentEmotion.Scores.ToRankedList().First().Key;
-                    _resultTextView.Text = _currentEmotion;
+                    var currentEmotionText = currentEmotion.Scores.ToRankedList().First().Key;
+                    _resultTextView.Text = currentEmotionText;
                     _emotionDetailsTextView.Text = string.Format("Surprise: {0:f2} Happy: {1:f2} Neutral: {2:f2} Sad: {3:f2} Angry: {4:f2}", currentMood.surprise, currentMood.happiness, currentMood.neutral, currentMood.sadness, currentMood.anger);
+
+                    // Check if emotion has changed before storing current
+                    if (currentEmotionText!=_currentEmotion)
+                    {
+                        // Play music
+                        int song;
+
+                        switch (currentEmotionText)
+                        {
+                            case "Happiness":
+                                song = Resource.Raw.happy;
+                                _currentSong = "Happy - Pharrell Williams";
+                                break;
+                            case "Sadness":
+                                song = Resource.Raw.sad;
+                                _currentSong = "My Heart Will Go On - Celine Dione";
+                                break;
+                            case "Anger":
+                                song = Resource.Raw.angry;
+                                _currentSong = "Down With The Sickness - Disturbed";
+                                break;
+                            default:
+                                song = Resource.Raw.neutral;
+                                _currentSong = "Hey Brother - Avicii";
+                                break;
+                        }
+
+                        _player.Reset();
+                        _player.Release();
+                        _player = MediaPlayer.Create(this, song);
+                        _player.Start();
+                    }
+
+                    _currentEmotion = currentEmotionText;
+
+                    try
+                    {
+                        var request = new RestRequest("api/data", Method.POST);
+                        request.RequestFormat = DataFormat.Json;
+                        var body = new DataPacket
+                        {
+                            userId = _deviceID,
+                            tripId = _currentSession,
+                            geo = new Geolocation
+                            {
+                                lat = _currentLocation.Latitude,
+                                lon = _currentLocation.Longitude
+                            },
+                            mood = currentMood,
+                            song = "Jingle Bells",
+                            speed = _currentLocation.Speed,
+                            time = timestamp
+                        };
+                        request.AddBody(body);
+
+                        client.ExecuteAsync(request, response => {
+                            System.Console.WriteLine(response.Content);
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        System.Console.WriteLine(e.Message);
+                    }
                 }
                 catch (Exception e)
                 {
                     _emotionDetailsTextView.Text = "";
                     _resultTextView.Text = "No face detected";
                 }
-                try
-                {
-                    var request = new RestRequest("api/data", Method.POST);
-                    request.RequestFormat = DataFormat.Json;
-                    var body = new DataPacket
-                    {
-                        userId = _deviceID,
-                        tripId = _currentSession,
-                        geo = new Geolocation
-                        {
-                            lat = _currentLocation.Latitude,
-                            lon = _currentLocation.Longitude
-                        },
-                        mood = currentMood,
-                        song = "Jingle Bells",
-                        speed = _currentLocation.Speed,
-                        time = timestamp
-                    };
-                    request.AddBody(body);
-
-                    client.ExecuteAsync(request, response => {
-                        System.Console.WriteLine(response.Content);
-                    });
-                }
-                catch (Exception e)
-                {
-                    System.Console.WriteLine(e.Message);
-                }
+                
             }
         }
 

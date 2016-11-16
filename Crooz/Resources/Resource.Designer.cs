@@ -102,7 +102,16 @@ namespace Crooz
 		{
 			
 			// aapt resource value: 0x7f040000
-			public const int happy = 2130968576;
+			public const int angry = 2130968576;
+			
+			// aapt resource value: 0x7f040001
+			public const int happy = 2130968577;
+			
+			// aapt resource value: 0x7f040002
+			public const int neutral = 2130968578;
+			
+			// aapt resource value: 0x7f040003
+			public const int sad = 2130968579;
 			
 			static Raw()
 			{
