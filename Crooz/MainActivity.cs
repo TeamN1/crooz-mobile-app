@@ -22,6 +22,9 @@ using Android.Telephony;
 using Java.Util;
 using Android.Media;
 
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+
 namespace Crooz
 {
     [Activity(Label = "Crooz", MainLauncher = true, Icon = "@drawable/icon", ScreenOrientation = ScreenOrientation.Portrait)]
@@ -29,7 +32,7 @@ namespace Crooz
     {
         public static File _file;
         public static File _dir;
-        public static Bitmap _bitmap;
+        //public static Bitmap bitmap;
 
         private ImageView _imageView;
         private TextView _resultTextView;
@@ -57,6 +60,16 @@ namespace Crooz
         EmotionAPI _emotionAPI;
 
         RestClient client = new RestClient("https://croozio.azurewebsites.net/");
+
+        class Image
+        {
+            public DateTime timestamp { get; set; }
+            public Bitmap data { get; set; }
+        }
+
+        BackgroundWorker _bw;
+
+        Queue<Image> _imageQueue;
 
         private bool IsThereAnAppToTakePictures()
         {
@@ -112,10 +125,13 @@ namespace Crooz
                 System.Console.WriteLine(e.Message);
             }
 
-
+            // Timer 
             photoTimer = new System.Timers.Timer(5000);
             photoTimer.Elapsed += async (sender, e) => await TakePhoto();
             photoTimer.Start();
+
+            // Background worker
+            _imageQueue = new Queue<Image>();
 
             SetContentView(Resource.Layout.Main);
 
@@ -142,6 +158,118 @@ namespace Crooz
             // Start Emotion API
             _emotionAPI = new EmotionAPI();
 
+            _bw = new BackgroundWorker();
+            _bw.DoWork += _bw_DoWork;
+            _bw.RunWorkerAsync();
+        }
+
+        private async void _bw_DoWork(object sender, DoWorkEventArgs eventArgs)
+        {
+            BackgroundWorker worker = (BackgroundWorker)sender;
+            while (!worker.CancellationPending)
+            {
+                if (_imageQueue.Count>0)
+                {
+                    var image = _imageQueue.Dequeue();
+                    var bitmap = image.data;
+                    var timestamp = image.timestamp;
+
+                    using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
+                    {
+                        // Mood
+                        var currentMood = new Mood();
+
+                        //Get a stream
+                        bitmap.Compress(Bitmap.CompressFormat.Jpeg, 90, stream);
+                        stream.Seek(0, System.IO.SeekOrigin.Begin);
+
+                        //Get and display the happiness score
+                        try
+                        {
+                            var currentEmotion = await _emotionAPI.GetEmotion(stream);
+                            currentMood = _emotionAPI.GetMood(currentEmotion);
+                            var currentEmotionText = currentEmotion.Scores.ToRankedList().First().Key;
+                            _resultTextView.Text = currentEmotionText;
+                            _emotionDetailsTextView.Text = string.Format("Surprise: {0:f2} Happy: {1:f2} Neutral: {2:f2} Sad: {3:f2} Angry: {4:f2}", currentMood.surprise, currentMood.happiness, currentMood.neutral, currentMood.sadness, currentMood.anger);
+
+                            // Check if emotion has changed before storing current
+                            if (currentEmotionText != _currentEmotion)
+                            {
+                                // Play music
+                                int song;
+
+                                switch (currentEmotionText)
+                                {
+                                    case "Happiness":
+                                        song = Resource.Raw.happy;
+                                        _currentSong = "Happy - Pharrell Williams";
+                                        break;
+                                    case "Sadness":
+                                        song = Resource.Raw.sad;
+                                        _currentSong = "My Heart Will Go On - Celine Dione";
+                                        break;
+                                    case "Anger":
+                                        song = Resource.Raw.angry;
+                                        _currentSong = "Down With The Sickness - Disturbed";
+                                        break;
+                                    default:
+                                        song = Resource.Raw.neutral;
+                                        _currentSong = "Hey Brother - Avicii";
+                                        break;
+                                }
+
+                                _player.Reset();
+                                _player.Release();
+                                _player = MediaPlayer.Create(this, song);
+                                _player.Start();
+                            }
+
+                            _currentEmotion = currentEmotionText;
+
+                            try
+                            {
+                                var request = new RestRequest("api/data", Method.POST);
+                                request.RequestFormat = DataFormat.Json;
+                                var body = new DataPacket
+                                {
+                                    userId = _deviceID,
+                                    tripId = _currentSession,
+                                    geo = new Geolocation
+                                    {
+                                        lat = _currentLocation.Latitude,
+                                        lon = _currentLocation.Longitude
+                                    },
+                                    mood = currentMood,
+                                    song = _currentSong,
+                                    speed = _currentLocation.Speed,
+                                    time = timestamp
+                                };
+                                request.AddBody(body);
+
+                                client.ExecuteAsync(request, response => {
+                                    System.Console.WriteLine(response.Content);
+                                });
+                            }
+                            catch (Exception e)
+                            {
+                                System.Console.WriteLine(e.Message);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            _emotionDetailsTextView.Text = "";
+                            _resultTextView.Text = "No face detected";
+                        }
+
+                    }
+                }
+                
+            }
+        }
+
+        private async void _imageQueue_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs eventargs)
+        {
+            System.Console.WriteLine("Added Value");
 
         }
 
@@ -225,102 +353,19 @@ namespace Crooz
             var timestamp = new DateTime();
 
             //Get the bitmap with the right rotation
-            _bitmap = BitmapHelpers.GetBitmap(data);
+            var bitmap = BitmapHelpers.GetBitmap(data);
 
             //Resize the picture to be under 4MB (Emotion API limitation and better for Android memory)
-            _bitmap = Bitmap.CreateScaledBitmap(_bitmap, 2000, (int)(2000 * _bitmap.Height / _bitmap.Width), false);
+            bitmap = Bitmap.CreateScaledBitmap(bitmap, 2000, (int)(2000 * bitmap.Height / bitmap.Width), false);
 
             //Display the image
             //_imageView.SetImageBitmap(_bitmap);
 
-            using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
+            _imageQueue.Enqueue(new Image
             {
-                // Mood
-                var currentMood = new Mood();
-
-                //Get a stream
-                _bitmap.Compress(Bitmap.CompressFormat.Jpeg, 90, stream);
-                stream.Seek(0, System.IO.SeekOrigin.Begin);
-
-                //Get and display the happiness score
-                try
-                {
-                    var currentEmotion = await _emotionAPI.GetEmotion(stream);
-                    currentMood = _emotionAPI.GetMood(currentEmotion);
-                    var currentEmotionText = currentEmotion.Scores.ToRankedList().First().Key;
-                    _resultTextView.Text = currentEmotionText;
-                    _emotionDetailsTextView.Text = string.Format("Surprise: {0:f2} Happy: {1:f2} Neutral: {2:f2} Sad: {3:f2} Angry: {4:f2}", currentMood.surprise, currentMood.happiness, currentMood.neutral, currentMood.sadness, currentMood.anger);
-
-                    // Check if emotion has changed before storing current
-                    if (currentEmotionText!=_currentEmotion)
-                    {
-                        // Play music
-                        int song;
-
-                        switch (currentEmotionText)
-                        {
-                            case "Happiness":
-                                song = Resource.Raw.happy;
-                                _currentSong = "Happy - Pharrell Williams";
-                                break;
-                            case "Sadness":
-                                song = Resource.Raw.sad;
-                                _currentSong = "My Heart Will Go On - Celine Dione";
-                                break;
-                            case "Anger":
-                                song = Resource.Raw.angry;
-                                _currentSong = "Down With The Sickness - Disturbed";
-                                break;
-                            default:
-                                song = Resource.Raw.neutral;
-                                _currentSong = "Hey Brother - Avicii";
-                                break;
-                        }
-
-                        _player.Reset();
-                        _player.Release();
-                        _player = MediaPlayer.Create(this, song);
-                        _player.Start();
-                    }
-
-                    _currentEmotion = currentEmotionText;
-
-                    try
-                    {
-                        var request = new RestRequest("api/data", Method.POST);
-                        request.RequestFormat = DataFormat.Json;
-                        var body = new DataPacket
-                        {
-                            userId = _deviceID,
-                            tripId = _currentSession,
-                            geo = new Geolocation
-                            {
-                                lat = _currentLocation.Latitude,
-                                lon = _currentLocation.Longitude
-                            },
-                            mood = currentMood,
-                            song = _currentSong,
-                            speed = _currentLocation.Speed,
-                            time = timestamp
-                        };
-                        request.AddBody(body);
-
-                        client.ExecuteAsync(request, response => {
-                            System.Console.WriteLine(response.Content);
-                        });
-                    }
-                    catch (Exception e)
-                    {
-                        System.Console.WriteLine(e.Message);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _emotionDetailsTextView.Text = "";
-                    _resultTextView.Text = "No face detected";
-                }
-                
-            }
+                data = bitmap,
+                timestamp = timestamp
+            });
         }
 
         public async void OnLocationChanged(Location location)
