@@ -113,7 +113,7 @@ namespace Crooz
             }
 
 
-            photoTimer = new System.Timers.Timer(5000);
+            photoTimer = new System.Timers.Timer(2000);
             photoTimer.Elapsed += async (sender, e) => await TakePhoto();
             photoTimer.Start();
 
@@ -166,7 +166,11 @@ namespace Crooz
 
         private async Task TakePhoto()
         {
-            _camera.TakePicture(this, null, this);
+            if (_bitmap == null)
+            {
+                _camera.TakePicture(this, null, this);
+            }
+            
         }
 
         public void OnSurfaceTextureAvailable(
@@ -320,6 +324,11 @@ namespace Crooz
                     _resultTextView.Text = "No face detected";
                 }
                 
+            }
+            if (_bitmap != null)
+            {
+                _bitmap.Recycle();
+                _bitmap = null;
             }
         }
 
