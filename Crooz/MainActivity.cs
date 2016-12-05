@@ -339,6 +339,10 @@ namespace Crooz
                         song = Resource.Raw.angry;
                         _currentSong = "Down With The Sickness - Disturbed";
                         break;
+                    case "Surprise":
+                        song = Resource.Raw.surprise;
+                        _currentSong = "Fith Symphony - Ludwig van Beethoven";
+                        break;
                     default:
                         song = Resource.Raw.neutral;
                         _currentSong = "Hey Brother - Avicii";
